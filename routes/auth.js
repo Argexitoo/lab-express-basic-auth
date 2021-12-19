@@ -12,14 +12,13 @@ router.get("/sign-up", (req,res,next) => {
 
 router.post("/sign-up", (req,res,next) => {
     const {email,password} = req.body;
-
-    if(password.length == 0 ) {
-        return res.render("sign-up", {passwordMessage: "You need a password"})
-    }
-
-    if(email.length == 0 ) {
-        return res.render("sign-up", {emailMessage: "You need a email"})
-    }
+    
+    if (email === '' || password === '') {
+        res.render('sign-up', {
+          errorMessage: 'Please enter both, email and password to sign up.'
+        });
+        return;
+      }
 
     User.findOne({email: email})
     .then((user) => {
@@ -44,6 +43,40 @@ router.post("/sign-up", (req,res,next) => {
         console.log("error:",error)
     })
 })
+
+router.get("/login", (req,res,next) => {
+    res.render("login")
+});
+
+router.post("/login", (req,res,next) => {
+    const {email,password} = req.body;
+
+    if (email === '' || password === '') {
+        res.render('login', {
+          errorMessage: 'Please enter both, email and password to login.'
+        });
+        return;
+      }
+    
+    User.findOne({email})
+    .then((dbUser) => {
+        if (!dbUser) {
+            return res.render('login',{errorMessage: 'User not found'})
+        }
+        const {_id,hashedPassword} = dbUser;
+        if (bcrypt.compareSync(password, hashedPassword)) {
+        req.session.currentUser = {
+            _id,
+            email,
+        }
+        res.redirect('/')
+    }
+    return res.render('login', {errorMessage: 'Password incorrect'})
+    })
+    .catch((e) => {
+        console.log("error:",e)
+    })
+});
 
 module.exports = router
 
